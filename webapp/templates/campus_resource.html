@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campus Resource Center</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap");
+      :root {
+        --bg: #f3f6fb;
+        --panel: #ffffff;
+        --ink: #162033;
+        --muted: #5f6f89;
+        --line: #d9e3f3;
+        --brand: #1e5eff;
+        --brand-dark: #1647c2;
+        --shadow: 0 18px 45px rgba(13, 32, 68, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Manrope", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(900px 500px at 88% -160px, rgba(64, 120, 255, 0.22) 0, transparent 62%),
+          radial-gradient(700px 420px at -12% -120px, rgba(0, 166, 138, 0.14) 0, transparent 58%),
+          linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #eef3ff 100%);
+        min-height: 100vh;
+        padding: 30px 20px;
+      }
+      .shell { max-width: 1120px; margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .brand { margin: 0; font-family: "Fraunces", serif; font-size: 34px; }
+      .links { display: flex; gap: 8px; flex-wrap: wrap; }
+      .links a {
+        text-decoration: none;
+        color: var(--muted);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .hero {
+        margin-top: 14px;
+        background: linear-gradient(135deg, #ffffff, #f3f7ff);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+      .hero h1 { margin: 0; font-size: 30px; line-height: 1.1; }
+      .hero p { margin: 8px 0 0; color: var(--muted); max-width: 760px; }
+      .stats { margin-top: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+      }
+      .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+      .value { font-size: 28px; margin-top: 6px; font-weight: 700; }
+      .panel {
+        margin-top: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+      .panel h3 { margin: 0 0 10px; font-size: 18px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; font-size: 14px; }
+      th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+      .note { margin-top: 10px; color: var(--muted); }
+      .actions { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+      .actions a { text-decoration: none; color: var(--brand-dark); font-weight: 700; }
+      @media (max-width: 920px) { .stats { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 640px) {
+        .brand { font-size: 28px; }
+        .hero h1 { font-size: 24px; }
+        .stats { grid-template-columns: 1fr; }
+      }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <h2 class="brand">Campus Resource Center</h2>
+        <div class="links">
+          <a href="/smart-food">Smart Food</a>
+          <a href="/makeup-class">Make-Up Class</a>
+          <a href="/payments">Payments</a>
+          <a href="/">Smart Campus</a>
+        </div>
+      </div>
+
+      <section class="hero">
+        <h1>Resource planning, utilization tracking, and faculty workload visibility.</h1>
+        <p>Monitor campus blocks, classrooms, and operational allocation metrics in one place.</p>
+      </section>
+
+      <section class="stats">
+        <div class="card"><div class="label">Campus Blocks</div><div class="value">{{ blocks|length }}</div></div>
+        <div class="card"><div class="label">Total Block Capacity</div><div class="value">{{ total_block_capacity }}</div></div>
+        <div class="card"><div class="label">Total Classroom Capacity</div><div class="value">{{ total_classroom_capacity }}</div></div>
+        <div class="card"><div class="label">Classroom Utilization</div><div class="value">{{ classroom_utilization }}%</div></div>
+        <div class="card"><div class="label">Faculty Records</div><div class="value">{{ faculty_workload|length }}</div></div>
+        <div class="card"><div class="label">Classroom Records</div><div class="value">{{ classrooms|length }}</div></div>
+      </section>
+
+      <section class="panel">
+        <h3>Faculty Workload Distribution</h3>
+        <table>
+          <thead><tr><th>Faculty</th><th>Assigned Subjects</th><th>Timetable Slots</th></tr></thead>
+          <tbody>
+            {% for f in faculty_workload %}
+            <tr><td>{{ f.name }}</td><td>{{ f.assigned_subjects }}</td><td>{{ f.timetable_slots }}</td></tr>
+            {% empty %}
+            <tr><td colspan="3">No faculty workload data available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h3>Campus Block Capacity Share</h3>
+        <table>
+          <thead><tr><th>Block</th><th>Name</th><th>Capacity</th><th>Utilization Share (%)</th></tr></thead>
+          <tbody>
+            {% for b in block_utilization %}
+            <tr><td>{{ b.code }}</td><td>{{ b.name }}</td><td>{{ b.capacity }}</td><td>{{ b.utilization }}</td></tr>
+            {% empty %}
+            <tr><td colspan="4">No campus block data available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h3>Classrooms</h3>
+        <table>
+          <thead><tr><th>Code</th><th>Name</th><th>Block</th><th>Capacity</th><th>Active</th></tr></thead>
+          <tbody>
+            {% for room in classrooms %}
+            <tr><td>{{ room.code }}</td><td>{{ room.name }}</td><td>{{ room.block.code }}</td><td>{{ room.capacity }}</td><td>{{ room.is_active }}</td></tr>
+            {% empty %}
+            <tr><td colspan="5">No classroom records available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="note">System calculations include capacity utilization and faculty workload distribution.</p>
+      </section>
+
+      <div class="actions">
+        <a href="/admin/manage/campusblock">Manage Blocks</a>
+        <a href="/admin/manage/classroom">Manage Classrooms</a>
+      </div>
+    </div>
+  </body>
+</html>
+

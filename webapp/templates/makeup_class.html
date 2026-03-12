@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Make-Up Class Center</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap");
+      :root {
+        --bg: #f3f6fb;
+        --panel: #ffffff;
+        --ink: #162033;
+        --muted: #5f6f89;
+        --line: #d9e3f3;
+        --brand: #1e5eff;
+        --brand-dark: #1647c2;
+        --shadow: 0 18px 45px rgba(13, 32, 68, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Manrope", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(900px 500px at 88% -160px, rgba(64, 120, 255, 0.22) 0, transparent 62%),
+          radial-gradient(700px 420px at -12% -120px, rgba(0, 166, 138, 0.14) 0, transparent 58%),
+          linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #eef3ff 100%);
+        min-height: 100vh;
+        padding: 30px 20px;
+      }
+      .shell { max-width: 1120px; margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .brand { margin: 0; font-family: "Fraunces", serif; font-size: 34px; }
+      .links { display: flex; gap: 8px; flex-wrap: wrap; }
+      .links a {
+        text-decoration: none;
+        color: var(--muted);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .hero {
+        margin-top: 14px;
+        background: linear-gradient(135deg, #ffffff, #f3f7ff);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+      .hero h1 { margin: 0; font-size: 30px; line-height: 1.1; }
+      .hero p { margin: 8px 0 0; color: var(--muted); max-width: 760px; }
+      .grid2 { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+      .panel h3 { margin: 0 0 10px; font-size: 18px; }
+      .stats { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .stat {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+      }
+      .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+      .value { font-size: 28px; margin-top: 6px; font-weight: 700; }
+      label { display: block; margin: 10px 0 6px; color: var(--muted); font-size: 12px; }
+      input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+      }
+      button {
+        width: 100%;
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button.primary { color: #fff; background: linear-gradient(115deg, var(--brand), var(--brand-dark)); }
+      button.alt { color: var(--ink); background: #fff; border: 1px solid var(--line); }
+      .msg { margin-top: 8px; color: var(--brand-dark); font-size: 13px; }
+      .tips { color: var(--muted); margin-top: 8px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; font-size: 14px; }
+      th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+      @media (max-width: 920px) { .grid2, .stats { grid-template-columns: 1fr; } }
+      @media (max-width: 640px) {
+        .brand { font-size: 28px; }
+        .hero h1 { font-size: 24px; }
+      }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <h2 class="brand">Make-Up Class Center</h2>
+        <div class="links">
+          <a href="/campus-resource">Campus Resource</a>
+          <a href="/payments">Payments</a>
+          <a href="/">Smart Campus</a>
+        </div>
+      </div>
+
+      <section class="hero">
+        <h1>Schedule remedial sessions and track separate make-up attendance.</h1>
+        <p>Faculty can generate remedial codes and students can mark attendance in dedicated make-up records.</p>
+      </section>
+
+      <section class="grid2">
+        <div class="panel" id="lecturerLoginCard" {% if lecturer_logged_in %}style="display:none;"{% endif %}>
+          <h3>Lecturer Login</h3>
+          <label>Username</label>
+          <input id="lecturerUser" placeholder="Lecturer username" />
+          <label>Password</label>
+          <input id="lecturerPass" type="password" placeholder="Password" />
+          <button class="primary" onclick="lecturerLogin()" style="margin-top:10px;">Login</button>
+          <div class="tips">Only lecturer/admin can schedule make-up sessions.</div>
+        </div>
+
+        <div class="panel" id="lecturerStatusCard">
+          <h3>Session Access</h3>
+          <div>Logged in lecturer: <strong id="lecturerName">{% if lecturer_logged_in %}{{ lecturer_name|default:"Session Active" }}{% else %}Not logged in{% endif %}</strong></div>
+          <button id="lecturerLogoutBtn" class="alt" onclick="lecturerLogout()" style="margin-top:10px;{% if not lecturer_logged_in %}display:none;{% endif %}">Logout</button>
+          <div id="authMsg" class="msg"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="scheduleWrap" {% if not lecturer_logged_in %}style="display:none; margin-top:14px;"{% else %}style="margin-top:14px;"{% endif %}>
+        <h3>Create Make-Up Session</h3>
+        <div class="grid2">
+          <div>
+            <label>Faculty Name</label>
+            <input id="facultyName" placeholder="Faculty name" />
+            <label>Course</label>
+            <input id="courseName" placeholder="Course name" />
+            <label>Class Section</label>
+            <input id="sectionName" placeholder="Section" />
+          </div>
+          <div>
+            <label>Date</label>
+            <input id="makeupDate" type="date" />
+            <label>Start Time</label>
+            <input id="startTime" type="time" />
+            <label>End Time</label>
+            <input id="endTime" type="time" />
+            <label>Notes</label>
+            <input id="notes" placeholder="Optional notes" />
+          </div>
+        </div>
+        <button class="primary" onclick="createMakeup()" style="margin-top:10px; max-width:260px;">Create Session</button>
+        <div id="createMsg" class="msg"></div>
+      </section>
+
+      <section class="stats">
+        <div class="stat"><div class="label">Total Make-Up Sessions</div><div class="value">{{ total_sessions }}</div></div>
+        <div class="stat"><div class="label">Total Make-Up Attendance</div><div class="value">{{ total_makeup_attendance }}</div></div>
+      </section>
+
+      <section class="panel" style="margin-top:14px;">
+        <h3>Recent Sessions</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Time</th><th>Faculty</th><th>Course</th><th>Section</th><th>Remedial Code</th></tr></thead>
+          <tbody>
+            {% for s in sessions %}
+            <tr><td>{{ s.date }}</td><td>{{ s.start_time }} - {{ s.end_time }}</td><td>{{ s.faculty.name|default:"-" }}</td><td>{{ s.course.name|default:"-" }}</td><td>{{ s.class_section.name|default:"-" }}</td><td>{{ s.remedial_code }}</td></tr>
+            {% empty %}
+            <tr><td colspan="6">No make-up sessions available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel" style="margin-top:14px;">
+        <h3>Attendance by Remedial Code</h3>
+        <table>
+          <thead><tr><th>Remedial Code</th><th>Students Marked</th></tr></thead>
+          <tbody>
+            {% for a in attendance_summary %}
+            <tr><td>{{ a.session__remedial_code }}</td><td>{{ a.total_present }}</td></tr>
+            {% empty %}
+            <tr><td colspan="2">No attendance data for make-up classes.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <script>
+      async function lecturerLogin() {
+        const form = new FormData();
+        form.append("username", document.getElementById("lecturerUser").value);
+        form.append("password", document.getElementById("lecturerPass").value);
+        const res = await fetch("/api/lecturer/login", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("authMsg");
+        if (data.ok) {
+          msg.innerText = "Login successful";
+          document.getElementById("lecturerName").innerText = data.name;
+          document.getElementById("scheduleWrap").style.display = "block";
+          document.getElementById("lecturerLoginCard").style.display = "none";
+          document.getElementById("lecturerLogoutBtn").style.display = "block";
+        } else {
+          msg.innerText = data.error || "Login failed";
+        }
+      }
+
+      async function lecturerLogout() {
+        await fetch("/api/lecturer/logout", { method: "POST" });
+        document.getElementById("lecturerName").innerText = "Not logged in";
+        document.getElementById("scheduleWrap").style.display = "none";
+        document.getElementById("lecturerLoginCard").style.display = "block";
+        document.getElementById("lecturerLogoutBtn").style.display = "none";
+        document.getElementById("authMsg").innerText = "Logged out";
+      }
+
+      async function createMakeup() {
+        const form = new FormData();
+        form.append("faculty_name", document.getElementById("facultyName").value);
+        form.append("course_name", document.getElementById("courseName").value);
+        form.append("section_name", document.getElementById("sectionName").value);
+        form.append("date", document.getElementById("makeupDate").value);
+        form.append("start_time", document.getElementById("startTime").value);
+        form.append("end_time", document.getElementById("endTime").value);
+        form.append("notes", document.getElementById("notes").value);
+        const res = await fetch("/api/makeup/create", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("createMsg");
+        if (data.ok) {
+          msg.innerText = "Session created. Remedial code: " + data.remedial_code;
+          setTimeout(() => location.reload(), 900);
+        } else {
+          msg.innerText = data.error || "Failed to create session";
+        }
+      }
+    </script>
+  </body>
+</html>
+

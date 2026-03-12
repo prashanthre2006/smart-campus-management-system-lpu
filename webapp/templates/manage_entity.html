@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Manage {{ title }}</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1140px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+      h1 { font-family:"Playfair Display",serif; margin:0; font-size:34px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+      .muted { color:var(--muted); }
+      input, select, textarea, button { width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0f1727; color:var(--text); }
+      button { border:none; background:linear-gradient(120deg,#f9a826,#f97316); color:#1d160d; font-weight:700; cursor:pointer; }
+      .delete-btn { background:#7f1d1d; color:#fff; border:1px solid #991b1b; padding:7px 10px; width:auto; }
+      table { width:100%; border-collapse:collapse; margin-top:8px; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:13px; }
+      .ok { color:#86efac; }
+      .err { color:#fca5a5; }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Manage {{ title }}</h1>
+        <div class="links"><a href="/admin">Admin Panel</a><a href="/dashboard">Dashboard</a></div>
+      </div>
+
+      <div class="card">
+        <p class="muted">Custom webpage manager (no Django admin).</p>
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit">Save</button>
+        </form>
+        {% if status_msg %}<p class="ok">{{ status_msg }}</p>{% endif %}
+        {% if error_msg %}<p class="err">{{ error_msg }}</p>{% endif %}
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">{{ title }} Records</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              {% for c in columns|slice:"1:" %}<th>{{ c }}</th>{% endfor %}
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in display_rows %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              {% for v in r.values|slice:"1:" %}<td>{{ v }}</td>{% endfor %}
+              <td>
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="id" value="{{ r.id }}" />
+                  <button type="submit" class="delete-btn">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="{{ columns|length|add:1 }}">No records.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Faculty Workbench</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1120px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+      h1 { margin:0; font-family:"Playfair Display",serif; font-size:34px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:12px; }
+      .muted { color:var(--muted); }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Faculty Workbench</h1>
+        <div class="links"><a href="/makeup-class">Make-Up Class</a><a href="/">Smart Campus</a></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Faculty: {{ faculty_name }}</h3>
+        <div class="muted">Today: {{ today_day }}</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Today's Timetable</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Course</th><th>Subject</th><th>Section</th><th>Room</th></tr></thead>
+          <tbody>
+            {% for t in today_timetable %}
+            <tr>
+              <td>{{ t.period.start_time|time:"H:i" }} - {{ t.period.end_time|time:"H:i" }}</td>
+              <td>{{ t.offering.course.code|default:t.offering.course.name }}</td>
+              <td>{{ t.offering.subject.name }}</td>
+              <td>{{ t.offering.class_section.name|default:"-" }}</td>
+              <td>{{ t.room|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No timetable rows for today.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Upcoming Make-Up Sessions</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Time</th><th>Course</th><th>Section</th><th>Remedial Code</th></tr></thead>
+          <tbody>
+            {% for s in upcoming_makeups %}
+            <tr><td>{{ s.date }}</td><td>{{ s.start_time }} - {{ s.end_time }}</td><td>{{ s.course.name|default:"-" }}</td><td>{{ s.class_section.name|default:"-" }}</td><td>{{ s.remedial_code }}</td></tr>
+            {% empty %}
+            <tr><td colspan="5">No upcoming sessions.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Smart Scheduling Recommendations</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Day</th><th>Suggested Free Slot</th></tr></thead>
+          <tbody>
+            {% for s in free_slot_suggestions %}
+            <tr><td>{{ s.date }}</td><td>{{ s.day }}</td><td>{{ s.slot }}</td></tr>
+            {% empty %}
+            <tr><td colspan="3">No recommendations available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

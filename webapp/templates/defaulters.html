@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Defaulters</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:920px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+      h1 { font-family:"Playfair Display",serif; margin:0; font-size:32px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      ul { margin:8px 0 0; }
+      li { margin:7px 0; }
+      .muted { color:var(--muted); }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Defaulters (Today)</h1>
+        <div class="links"><a href="/dashboard">Dashboard</a><a href="/admin">Admin Panel</a></div>
+      </div>
+      <div class="card">
+        <div class="muted">Students who were not marked present today.</div>
+        <ul id="list"></ul>
+      </div>
+    </div>
+
+    <script>
+      async function loadDefaulters() {
+        const res = await fetch("/api/defaulters");
+        const data = await res.json();
+        if (!data.ok) return;
+        const arr = data.defaulters || [];
+        document.getElementById("list").innerHTML = arr.length ? arr.map((n) => `<li>${n}</li>`).join("") : "<li>No defaulters today.</li>";
+      }
+      loadDefaulters();
+    </script>
+  </body>
+</html>
+

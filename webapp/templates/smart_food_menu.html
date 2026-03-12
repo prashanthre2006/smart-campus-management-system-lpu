@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campus Bistro Menu</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#11100d; --panel:#1a1814; --line:#3d382a; --text:#f6f0df; --muted:#c3b99b; --brand:#f2a93b; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); padding:24px; }
+      .shell { max-width:1140px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+      .brand { font-family:"Playfair Display",serif; font-size:30px; }
+      .links { display:flex; gap:10px; flex-wrap:wrap; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); padding:8px 12px; border-radius:999px; }
+      .layout { margin-top:14px; display:grid; grid-template-columns:1fr 300px; gap:14px; }
+      .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      .menu-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+      .item { background:#ffffff; border:1px solid var(--line); border-radius:12px; padding:12px; }
+      .row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+      .price { color:var(--brand); font-weight:700; }
+      .small { color:var(--muted); font-size:13px; }
+      input, button { padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:#15130f; color:var(--text); }
+      button { border:none; background:var(--brand); color:#241c0e; font-weight:700; cursor:pointer; }
+      .cartline { display:flex; justify-content:space-between; margin:8px 0; color:var(--muted); }
+      .big { font-size:28px; font-weight:700; }
+      .full { width:100%; }
+      @media (max-width:980px){ .layout{ grid-template-columns:1fr; } .menu-grid{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <div class="brand">Campus Bistro</div>
+        <div class="links">
+          <a href="/smart-food">Home</a>
+          <a href="/smart-food/checkout">Checkout</a>
+          <a href="/smart-food/orders">Orders</a>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div>
+          {% for category, items in menu_sections.items %}
+          <div class="panel" style="margin-bottom:12px;">
+            <h2 style="margin-top:0; font-family:'Playfair Display',serif;">{{ category }}</h2>
+            <div class="menu-grid">
+              {% for i in items %}
+              <div class="item">
+                <div class="row"><strong>{{ i.name }}</strong><span class="price">{{ i.price }}</span></div>
+                <div class="small" style="margin:8px 0 10px;">{{ i.description|default:"Chef special campus meal." }}</div>
+                <div class="row">
+                  <input id="qty-{{ i.id }}" type="number" min="1" value="1" style="width:80px;" />
+                  <button onclick="addToCart('{{ i.id }}','{{ i.name|escapejs }}','{{ i.price }}')">Add To Cart</button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="panel" style="height:max-content; position:sticky; top:20px;">
+          <h3 style="margin-top:0;">Your Cart</h3>
+          <div class="cartline"><span>Items</span><span id="cartCount">0</span></div>
+          <div class="cartline"><span>Total</span><span id="cartTotal">0.00</span></div>
+          <div class="big" id="cartBig">0.00</div>
+          <button class="full" style="margin-top:10px;" onclick="goCheckout()">Proceed To Checkout</button>
+          <button class="full" style="margin-top:8px; background:#ffffff; color:var(--muted); border:1px solid var(--line);" onclick="clearCart()">Clear Cart</button>
+          <p class="small" style="margin-top:10px;">Cart is shared with checkout page automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function getCart() {
+        try { return JSON.parse(localStorage.getItem("smart_food_cart") || "[]"); }
+        catch (_) { return []; }
+      }
+      function saveCart(cart) { localStorage.setItem("smart_food_cart", JSON.stringify(cart)); }
+
+      function updateSummary() {
+        const cart = getCart();
+        let count = 0;
+        let total = 0;
+        for (const c of cart) {
+          count += Number(c.quantity || 0);
+          total += Number(c.quantity || 0) * Number(c.price || 0);
+        }
+        document.getElementById("cartCount").innerText = String(count);
+        document.getElementById("cartTotal").innerText = total.toFixed(2);
+        document.getElementById("cartBig").innerText = total.toFixed(2);
+      }
+
+      function addToCart(id, name, price) {
+        const qty = Math.max(1, parseInt(document.getElementById("qty-" + id).value || "1", 10));
+        const cart = getCart();
+        const ex = cart.find((x) => x.food_item_id === id);
+        if (ex) ex.quantity += qty;
+        else cart.push({ food_item_id: id, name: name, quantity: qty, price: parseFloat(price || "0") });
+        saveCart(cart);
+        updateSummary();
+      }
+
+      function clearCart() { saveCart([]); updateSummary(); }
+      function goCheckout() { window.location.href = "/smart-food/checkout"; }
+
+      updateSummary();
+    </script>
+  </body>
+</html>
+

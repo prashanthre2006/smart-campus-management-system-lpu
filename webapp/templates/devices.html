@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Devices Monitor</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1050px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+      .title { font-family:"Playfair Display",serif; font-size:32px; margin:0; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      table { width:100%; border-collapse:collapse; margin-top:8px; }
+      th, td { border-bottom:1px solid var(--line); padding:9px 6px; text-align:left; }
+      th { color:var(--muted); font-size:13px; }
+      .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:#94a3b8; }
+      .online .dot { background:#22c55e; }
+      .offline .dot { background:#ef4444; }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1 class="title">Devices Monitor</h1>
+        <div class="links"><a href="/dashboard">Dashboard</a><a href="/admin">Admin Panel</a></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Name</th><th>Location</th><th>Status</th><th>Last Seen</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      async function loadDevices() {
+        const res = await fetch("/api/devices");
+        const data = await res.json();
+        if (!data.ok) return;
+        const rows = data.devices || [];
+        document.getElementById("rows").innerHTML = rows.length ? rows.map((d) => {
+          const st = String(d.status || "").toLowerCase();
+          const cls = st === "online" ? "online" : "offline";
+          return `<tr><td>${d.name || "-"}</td><td>${d.location || "-"}</td><td class="${cls}"><span class="dot"></span>${d.status || "-"}</td><td>${d.last_seen_at || "-"}</td></tr>`;
+        }).join("") : "<tr><td colspan='4'>No devices found.</td></tr>";
+      }
+      loadDevices();
+    </script>
+  </body>
+</html>
+

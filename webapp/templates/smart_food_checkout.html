@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campus Bistro Checkout</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#11100d; --panel:#1a1814; --soft:#221f18; --line:#3d382a; --text:#f6f0df; --muted:#c3b99b; --brand:#f2a93b; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); padding:24px; }
+      .shell { max-width:1140px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+      .brand { font-family:"Playfair Display",serif; font-size:30px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .layout { display:grid; grid-template-columns:1.1fr .9fr; gap:14px; }
+      .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      .soft { background:var(--soft); }
+      label { display:block; margin:10px 0 6px; color:var(--muted); font-size:12px; }
+      input, select, button { width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:#15130f; color:var(--text); }
+      button { border:none; background:var(--brand); color:#251d0f; font-weight:700; cursor:pointer; }
+      button.secondary { background:#ffffff; color:var(--muted); border:1px solid var(--line); }
+      table { width:100%; border-collapse:collapse; margin-top:10px; }
+      th, td { border-bottom:1px solid var(--line); padding:8px; text-align:left; }
+      th { color:var(--muted); font-size:13px; }
+      .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .small { color:var(--muted); font-size:12px; }
+      .amount { font-size:36px; font-weight:700; color:var(--brand); }
+      @media (max-width:980px){ .layout{ grid-template-columns:1fr; } .row{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <div class="brand">Campus Bistro</div>
+        <div class="links">
+          <a href="/smart-food">Home</a>
+          <a href="/smart-food/menu">Menu</a>
+          <a href="/smart-food/orders">Orders</a>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div class="panel">
+          <h2 style="margin-top:0; font-family:'Playfair Display',serif;">Checkout Details</h2>
+
+          <label>Student Name</label>
+          <select id="studentName">
+            <option value="">Select student</option>
+            {% for s in students %}<option value="{{ s.name }}">{{ s.name }}</option>{% endfor %}
+          </select>
+
+          <label>Break Time Slot</label>
+          <select id="slotId">
+            <option value="">Select slot</option>
+            {% for s in slots %}<option value="{{ s.id }}">{{ s.name }} ({{ s.start_time }}-{{ s.end_time }})</option>{% endfor %}
+          </select>
+
+          <label>Order Mode</label>
+          <select id="orderMode" onchange="toggleDelivery()">
+            <option value="dining">Dining</option>
+            <option value="delivery">Delivery</option>
+          </select>
+
+          <div id="deliveryWrap" style="display:none;">
+            <label>Delivery Location</label>
+            <input id="deliveryLocation" placeholder="Hostel / Block / Room" />
+          </div>
+
+          <h3>Order Summary</h3>
+          <table>
+            <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
+            <tbody id="cartBody"><tr><td colspan="4">Cart is empty. Add items from Menu page.</td></tr></tbody>
+          </table>
+          <p>Total Amount: <strong id="cartTotal">0.00</strong></p>
+          <div class="row">
+            <button class="secondary" onclick="clearCart()">Clear Cart</button>
+            <button onclick="placeOrder()">Place Order</button>
+          </div>
+          <div id="orderMsg" class="small" style="margin-top:8px;color:#93c5fd;"></div>
+        </div>
+
+        <div>
+          <div id="qrBox" class="panel soft" style="display:none;">
+            <h3 style="margin-top:0;">QR Payment</h3>
+            <div class="small" style="color:#dc2626; font-weight:700; margin-bottom:8px;">Payment currently not accepted.</div>
+            <div class="small" style="margin-top:8px;">Amount to Pay</div>
+            <div class="amount" id="qrPayload">0.00</div>
+            <div class="small">After payment, submit UPI transaction ID for admin verification.</div>
+            <input id="upiTxnId" placeholder="Enter UPI transaction ID" style="margin-top:8px;" />
+            <input id="upiAmount" placeholder="Enter paid amount" style="margin-top:8px;" />
+            <button style="margin-top:8px;" onclick="submitUpiProof()">Submit Payment Proof</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let lastOrderId = null;
+      let lastPaymentId = null;
+      let pollTimer = null;
+
+      function getCart() {
+        try { return JSON.parse(localStorage.getItem("smart_food_cart") || "[]"); }
+        catch (_) { return []; }
+      }
+      function saveCart(cart) { localStorage.setItem("smart_food_cart", JSON.stringify(cart)); }
+
+      function toggleDelivery() {
+        document.getElementById("deliveryWrap").style.display = document.getElementById("orderMode").value === "delivery" ? "block" : "none";
+      }
+
+      function renderCart() {
+        const cart = getCart();
+        const body = document.getElementById("cartBody");
+        if (!cart.length) {
+          body.innerHTML = "<tr><td colspan='4'>Cart is empty. Add items from Menu page.</td></tr>";
+          document.getElementById("cartTotal").innerText = "0.00";
+          return;
+        }
+        let total = 0;
+        body.innerHTML = cart.map((it) => {
+          const line = Number(it.quantity || 0) * Number(it.price || 0);
+          total += line;
+          return `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${Number(it.price).toFixed(2)}</td><td>${line.toFixed(2)}</td></tr>`;
+        }).join("");
+        document.getElementById("cartTotal").innerText = total.toFixed(2);
+      }
+
+      function clearCart() { saveCart([]); renderCart(); }
+
+      async function placeOrder() {
+        const cart = getCart();
+        const studentName = document.getElementById("studentName").value;
+        const slotId = document.getElementById("slotId").value;
+        const orderMode = document.getElementById("orderMode").value;
+        const deliveryLocation = document.getElementById("deliveryLocation").value;
+        const msg = document.getElementById("orderMsg");
+
+        if (!studentName || !slotId) { msg.innerText = "Please select student and break slot."; return; }
+        if (!cart.length) { msg.innerText = "Cart empty. Add items from menu page."; return; }
+
+        const form = new FormData();
+        form.append("student_name", studentName);
+        form.append("slot_id", slotId);
+        form.append("order_mode", orderMode);
+        form.append("delivery_location", deliveryLocation);
+        form.append("items", JSON.stringify(cart.map((c) => ({ food_item_id: c.food_item_id, quantity: c.quantity }))));
+
+        const res = await fetch("/api/food/place-order", { method: "POST", body: form });
+        const data = await res.json();
+        if (!data.ok) { msg.innerText = data.error || "Order failed."; return; }
+
+        lastOrderId = data.order_id;
+        lastPaymentId = data.payment_id;
+        if (data.payment_status === "pending") {
+          document.getElementById("qrBox").style.display = "block";
+          document.getElementById("qrPayload").innerText = String(data.total_amount || "0");
+          msg.innerText = "Order #" + data.order_id + " created. Waiting payment confirmation.";
+          startPaymentPolling();
+        } else {
+          msg.innerText = "Order placed successfully.";
+        }
+      }
+
+      function stopPaymentPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      }
+
+      function startPaymentPolling() {
+        stopPaymentPolling();
+        pollTimer = setInterval(async () => {
+          if (!lastOrderId && !lastPaymentId) return;
+          const qp = lastPaymentId ? ("payment_id=" + lastPaymentId) : ("order_id=" + lastOrderId);
+          const res = await fetch("/api/payment/status?" + qp);
+          const data = await res.json();
+          if (data.ok && data.payment_status === "paid") {
+            document.getElementById("orderMsg").innerText = "Payment confirmed. Transaction: " + (data.transaction_id || "-");
+            stopPaymentPolling();
+            saveCart([]);
+            renderCart();
+            setTimeout(() => { window.location.href = "/payment-success?order_id=" + encodeURIComponent(String(lastOrderId || "")); }, 900);
+          } else if (data.ok && data.payment_status === "failed") {
+            document.getElementById("orderMsg").innerText = "Payment marked as NOT RECEIVED by admin.";
+            stopPaymentPolling();
+          }
+        }, 3000);
+      }
+
+      async function submitUpiProof() {
+        if (!lastOrderId && !lastPaymentId) return;
+        const form = new FormData();
+        if (lastOrderId) form.append("order_id", String(lastOrderId));
+        if (lastPaymentId) form.append("payment_id", String(lastPaymentId));
+        form.append("upi_txn_id", document.getElementById("upiTxnId").value || "");
+        form.append("received_amount", document.getElementById("upiAmount").value || "");
+        const res = await fetch("/api/payment/submit-upi-proof", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("orderMsg");
+        if (data.ok) { msg.innerText = "UPI proof submitted. Waiting for admin confirmation."; startPaymentPolling(); }
+        else { msg.innerText = data.error || "Failed to submit proof."; }
+      }
+
+      renderCart();
+    </script>
+  </body>
+</html>
+

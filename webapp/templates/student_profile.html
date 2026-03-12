@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Profile</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1120px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+      h1 { font-family:"Playfair Display",serif; margin:0; font-size:34px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+      .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+      .stat .label { color:var(--muted); font-size:12px; }
+      .stat .num { font-size:24px; font-weight:700; color:var(--accent); }
+      select, button { width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0f1727; color:var(--text); }
+      button { border:none; background:linear-gradient(120deg,#f9a826,#f97316); color:#1d160d; font-weight:700; cursor:pointer; max-width:240px; }
+      table { width:100%; border-collapse:collapse; margin-top:8px; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:12px; }
+      @media (max-width:1000px){ .grid { grid-template-columns:1fr 1fr; } }
+      @media (max-width:640px){ .grid { grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Student Attendance Profile</h1>
+        <div class="links"><a href="/student">Attendance</a><a href="/">Smart Campus</a></div>
+      </div>
+
+      <div class="card">
+        <form method="get" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;">
+          <div>
+            <label style="color:#9fb0cf;font-size:12px;display:block;margin-bottom:6px;">Student</label>
+            <select name="student_name">
+              <option value="">Select student</option>
+              {% for s in students %}
+              <option value="{{ s.name }}" {% if selected_name == s.name %}selected{% endif %}>{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit">View Profile</button>
+        </form>
+      </div>
+
+      {% if selected_student %}
+      <div class="card">
+        <h3 style="margin-top:0;">{{ selected_student.name }}</h3>
+        <div class="grid">
+          <div class="stat"><div class="label">Total Records</div><div class="num">{{ stats.total }}</div></div>
+          <div class="stat"><div class="label">Present</div><div class="num">{{ stats.present }}</div></div>
+          <div class="stat"><div class="label">Late</div><div class="num">{{ stats.late }}</div></div>
+          <div class="stat"><div class="label">Absent</div><div class="num">{{ stats.absent }}</div></div>
+          <div class="stat"><div class="label">Attendance Rate</div><div class="num">{{ stats.attendance_rate }}%</div></div>
+          <div class="stat"><div class="label">Make-Up Marked</div><div class="num">{{ stats.makeup_marked }}</div></div>
+          <div class="stat"><div class="label">Food Orders</div><div class="num">{{ stats.food_order_count }}</div></div>
+          <div class="stat"><div class="label">Food Spend</div><div class="num">{{ stats.food_spend }}</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Subject-Wise Summary</h3>
+        <table>
+          <thead><tr><th>Subject</th><th>Present</th><th>Late</th><th>Absent</th><th>Total</th></tr></thead>
+          <tbody>
+            {% for r in subject_rows %}
+            <tr><td>{{ r.subject }}</td><td>{{ r.present }}</td><td>{{ r.late }}</td><td>{{ r.absent }}</td><td>{{ r.total }}</td></tr>
+            {% empty %}
+            <tr><td colspan="5">No subject data.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Recent Attendance</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Period</th><th>Status</th><th>Device</th><th>Marked At</th></tr></thead>
+          <tbody>
+            {% for a in recent_records %}
+            <tr><td>{{ a.date }}</td><td>{{ a.period_name }}</td><td>{{ a.status }}</td><td>{{ a.device_name|default:"Webcam" }}</td><td>{{ a.marked_at }}</td></tr>
+            {% empty %}
+            <tr><td colspan="5">No records.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>
+

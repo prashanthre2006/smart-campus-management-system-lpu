@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Panel</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --panel2:#17233b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; --accent2:#f97316; }
+      * { box-sizing:border-box; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; color:var(--text); background:radial-gradient(1000px 550px at 80% -20%, #24365c 0%, transparent 55%), var(--bg); }
+      .shell { max-width:1080px; margin:0 auto; }
+      .hero { display:flex; justify-content:space-between; align-items:end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+      .hero-left { display:flex; gap:14px; align-items:center; }
+      .crest { width:54px; height:54px; border-radius:12px; background:#0f1727; border:1px solid var(--line); overflow:hidden; display:grid; place-items:center; }
+      .crest img { width:100%; height:100%; object-fit:cover; }
+      .title { margin:0; font-family:"Playfair Display",serif; font-size:34px; }
+      .subtitle { margin:6px 0 0; color:var(--muted); }
+      .badge { padding:6px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:12px; }
+      .card { background:linear-gradient(140deg, var(--panel) 0%, var(--panel2) 85%); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:12px; }
+      .card h3 { margin-top:0; }
+      .section-desc { color:var(--muted); font-size:13px; margin-top:-6px; }
+      .grid-2 { display:grid; grid-template-columns:1.2fr .8fr; gap:14px; }
+      .field label { display:block; margin:8px 0 6px; color:var(--muted); font-size:12px; }
+      input, select, button { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:#0f1727; color:var(--text); }
+      .btn { border:none; cursor:pointer; font-weight:700; background:linear-gradient(120deg,var(--accent),var(--accent2)); color:#1d160d; }
+      .btn.secondary, .action-btn { background:#ffffff; color:var(--muted); border:1px solid var(--line); }
+      .btn-row { display:grid; gap:10px; margin-top:10px; }
+      .btn-row.single { grid-template-columns:1fr; }
+      .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+      .tool-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+      .tool { background:#ffffff; border:1px solid var(--line); border-radius:10px; padding:12px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+      .tool:hover { transform:translateY(-1px); border-color:#bcd0ef; box-shadow:0 10px 22px rgba(13,32,68,.12); }
+      .tool h4 { margin:0 0 6px; }
+      .tool p { margin:0; color:var(--muted); font-size:12px; }
+      .section-title { margin:12px 0 8px; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+      .status { margin-top:10px; min-height:42px; border:1px dashed var(--line); border-radius:10px; padding:10px; color:var(--muted); }
+      .result { margin-top:10px; font-family:ui-monospace,Consolas,monospace; color:#9ca3af; white-space:pre-wrap; font-size:12px; }
+      button:hover, .btn:hover, .action-btn:hover { transform:translateY(-1px); box-shadow:0 8px 18px rgba(0,0,0,.2); }
+      @media (max-width:980px){ .grid-2,.action-grid,.tool-grid{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="hero">
+        <div class="hero-left">
+          <div class="crest"><img src="/static/lpu-logo.jfif" alt="LPU Logo" /></div>
+          <div>
+            <h2 class="title">Admin Panel</h2>
+            <p class="subtitle">Enroll students, train models, and manage campus operations.</p>
+          </div>
+        </div>
+        <div class="badge">Admin Portal</div>
+      </div>
+
+      <div class="card" id="loginCard" {% if is_admin %}style="display:none;"{% endif %}>
+        <h3>Admin Login</h3>
+        <div class="section-desc">Register attendance through admin and control all modules.</div>
+        <div class="section-desc" style="margin-top:4px;">Admin Username: {{ masked_admin_username }}</div>
+        <div class="field">
+          <label>Admin Password</label>
+          <input id="adminPass" type="password" placeholder="Enter admin password" />
+        </div>
+        <div class="btn-row single"><button class="btn" onclick="adminLogin()">Login</button></div>
+        <div class="status" id="statusBox">{% if is_admin %}Logged in{% else %}Not logged in{% endif %}</div>
+      </div>
+
+      <div class="card" id="adminFeatures" {% if not is_admin %}style="display:none;"{% endif %}>
+        <h3>Enrollment</h3>
+        <div class="section-desc">Capture one student photo and train the model.</div>
+        <div class="grid-2" style="margin-top:10px;">
+          <div>
+            <video id="video" autoplay playsinline style="width:100%;border-radius:12px;background:#000;border:1px solid var(--line);"></video>
+            <canvas id="canvas" width="560" height="420" style="display:none;"></canvas>
+          </div>
+          <div>
+            <div class="field">
+              <label>Student Name</label>
+              <input id="name" placeholder="e.g. Ayesha Khan" />
+            </div>
+            <button id="enrollBtn" class="btn" onclick="enroll()">Capture Photo (<span id="captureCount">0</span>/1)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="adminReports" {% if not is_admin %}style="display:none;"{% endif %}>
+        <h3>Training & Reports</h3>
+        <div class="action-grid">
+          <button class="action-btn" onclick="train()">Train Model</button>
+          <button class="action-btn" onclick="exportReport()">Export Excel</button>
+          <button class="action-btn" onclick="exportPdf()">Export PDF</button>
+          <button class="action-btn" onclick="resetToday()">Reset Today</button>
+        </div>
+        <div class="result" id="result"></div>
+      </div>
+
+      <div class="card" id="adminTools" {% if not is_admin %}style="display:none;"{% endif %}>
+        <h3>Admin Tools</h3>
+
+        <div class="section-title">Quick Access</div>
+        <div class="tool-grid">
+          <div class="tool" onclick="location.href='/dashboard'"><h4>Dashboard</h4><p>Daily overview & defaulters</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/course'"><h4>Master Data</h4><p>Manage academic entities</p></div>
+          <div class="tool" onclick="location.href='/admin/monthly'"><h4>Monthly Report</h4><p>Summary & exports</p></div>
+          <div class="tool" onclick="location.href='/admin/devices'"><h4>Device Monitor</h4><p>Kiosk status & last seen</p></div>
+        </div>
+
+        <div class="section-title">Academics</div>
+        <div class="tool-grid">
+          <div class="tool" onclick="location.href='/admin/manage/faculty'"><h4>Faculty</h4><p>Add & manage faculty</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/student'"><h4>Students</h4><p>Register & edit students</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/subject'"><h4>Subjects</h4><p>Create subjects & codes</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/course'"><h4>Courses</h4><p>Programs & batches</p></div>
+          <div class="tool" onclick="location.href='/admin/schedule'"><h4>Timetable</h4><p>Assign subjects per period</p></div>
+        </div>
+
+        <div class="section-title">Governance</div>
+        <div class="tool-grid">
+          <div class="tool" onclick="location.href='/admin/defaulters'"><h4>Defaulters</h4><p>Today absence list</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/device'"><h4>Devices</h4><p>All registered devices</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/auditlog'"><h4>Audit Logs</h4><p>System actions history</p></div>
+        </div>
+
+        <div class="section-title">Smart Campus Ops</div>
+        <div class="tool-grid">
+          <div class="tool" onclick="location.href='/admin/manage/campusblock'"><h4>Campus Blocks</h4><p>Block capacity and details</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/breaktimeslot'"><h4>Break Slots</h4><p>Food pre-order windows</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/fooditem'"><h4>Food Items</h4><p>Manage menu inventory</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/foodorder'"><h4>Food Orders</h4><p>Track order lifecycle</p></div>
+          <div class="tool" onclick="location.href='/payments'"><h4>Payments</h4><p>Transaction records</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/makeupclasssession'"><h4>Make-Up Sessions</h4><p>Remedial code sessions</p></div>
+          <div class="tool" onclick="location.href='/admin/manage/makeupattendance'"><h4>Make-Up Attendance</h4><p>Code/face attendance logs</p></div>
+        </div>
+      </div>
+
+      <div class="card" id="logoutCard" {% if not is_admin %}style="display:none;"{% endif %}>
+        <h3>Admin Session</h3>
+        <div class="section-desc">You are currently logged in.</div>
+        <button class="action-btn" onclick="adminLogout()">Logout</button>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      async function startCamera() {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } });
+        video.srcObject = stream;
+        await new Promise((resolve) => {
+          if (video.readyState >= 1) return resolve();
+          video.onloadedmetadata = () => resolve();
+        });
+        await video.play();
+      }
+
+      function snapshot() {
+        if (!video.videoWidth || !video.videoHeight) return null;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.8);
+      }
+
+      function setStatus(text) { document.getElementById("statusBox").innerText = text; }
+      function resetEnrollUi() { const el = document.getElementById("captureCount"); if (el) el.innerText = "0"; }
+
+      async function adminLogin() {
+        const form = new FormData();
+        form.append("password", document.getElementById("adminPass").value);
+        const res = await fetch("/api/admin/login", { method: "POST", body: form });
+        const data = await res.json();
+        if (!data.ok) return setStatus(data.error || "Login failed");
+        setStatus("Logged in");
+        document.getElementById("loginCard").style.display = "none";
+        document.getElementById("logoutCard").style.display = "block";
+        document.getElementById("adminFeatures").style.display = "block";
+        document.getElementById("adminReports").style.display = "block";
+        document.getElementById("adminTools").style.display = "block";
+        startCamera();
+      }
+
+      async function adminLogout() {
+        await fetch("/api/admin/logout");
+        setStatus("Logged out");
+        document.getElementById("loginCard").style.display = "block";
+        document.getElementById("logoutCard").style.display = "none";
+        document.getElementById("adminFeatures").style.display = "none";
+        document.getElementById("adminReports").style.display = "none";
+        document.getElementById("adminTools").style.display = "none";
+      }
+
+      const REQUIRED_CAPTURE_COUNT = 1;
+
+      async function enroll() {
+        const name = document.getElementById("name").value.trim();
+        if (!name) return alert("Enter name");
+        const frame = snapshot();
+        if (!frame) return setStatus("Camera not ready. Wait 2 seconds and try again.");
+        const form = new FormData();
+        form.append("name", name);
+        form.append("frame", frame);
+        const res = await fetch("/api/enroll", { method: "POST", body: form });
+        const data = await res.json();
+        if (!data.ok) {
+          setStatus("Capture failed: " + (data.error || "Unknown error"));
+          document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+          return;
+        }
+        const count = Number(data.count || 0);
+        document.getElementById("captureCount").innerText = String(Math.min(count, REQUIRED_CAPTURE_COUNT));
+        setStatus(count < REQUIRED_CAPTURE_COUNT ? ("Photo " + count + "/" + REQUIRED_CAPTURE_COUNT + " captured for " + name + ".") : ("Photo captured for " + name + ". Click Train Model."));
+        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+      }
+
+      async function train() {
+        const res = await fetch("/api/train", { method: "POST" });
+        const data = await res.json();
+        if (data.ok) {
+          setStatus("Model trained successfully");
+          resetEnrollUi();
+          document.getElementById("name").value = "";
+        } else {
+          setStatus("Training failed: " + (data.error || "Unknown error"));
+        }
+        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+      }
+
+      async function exportReport() {
+        const res = await fetch("/api/export");
+        document.getElementById("result").innerText = JSON.stringify(await res.json(), null, 2);
+      }
+
+      async function exportPdf() {
+        const res = await fetch("/api/export-pdf");
+        document.getElementById("result").innerText = JSON.stringify(await res.json(), null, 2);
+      }
+
+      async function resetToday() {
+        const res = await fetch("/api/reset-today");
+        document.getElementById("result").innerText = JSON.stringify(await res.json(), null, 2);
+      }
+
+      if ({% if is_admin %}true{% else %}false{% endif %}) startCamera();
+    </script>
+  </body>
+</html>
+

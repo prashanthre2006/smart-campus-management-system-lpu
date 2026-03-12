@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart Campus Login</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --panel2:#17233b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      * { box-sizing:border-box; }
+      body {
+        margin:0;
+        min-height:100vh;
+        display:grid;
+        place-items:center;
+        font-family:"Manrope",sans-serif;
+        background:radial-gradient(1000px 550px at 80% -20%, #24365c 0%, transparent 55%), var(--bg);
+        color:var(--text);
+        padding:24px;
+      }
+      .card {
+        width:100%;
+        max-width:420px;
+        background:linear-gradient(140deg, var(--panel) 0%, var(--panel2) 85%);
+        border:1px solid var(--line);
+        border-radius:16px;
+        padding:24px;
+        box-shadow:0 18px 45px rgba(0,0,0,.35);
+      }
+      .title { font-family:"Playfair Display",serif; font-size:34px; margin:0; }
+      .sub { color:var(--muted); margin:8px 0 16px; }
+      label { display:block; margin:10px 0 6px; color:var(--muted); font-size:12px; }
+      input, button {
+        width:100%;
+        padding:11px 12px;
+        border-radius:10px;
+        border:1px solid var(--line);
+        background:#0f1727;
+        color:var(--text);
+      }
+      button {
+        margin-top:12px;
+        border:none;
+        background:linear-gradient(120deg,#f9a826,#f97316);
+        color:#1d160d;
+        font-weight:700;
+        cursor:pointer;
+      }
+      .error { color:#f87171; margin-top:10px; }
+      .back { margin-top:12px; }
+      .back a { color:var(--accent); text-decoration:none; }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="card">
+      <h1 class="title">Admin Login</h1>
+      <p class="sub">Secure access to dashboard, timetable, resources, payments, and make-up operations.</p>
+      <form method="post">
+        {% csrf_token %}
+        <label>Username</label>
+        <input name="username" placeholder="Enter username" />
+        <label>Password</label>
+        <input name="password" type="password" placeholder="Enter password" />
+        <button type="submit">Login</button>
+      </form>
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+      <div class="back"><a href="/">Back to Smart Campus</a></div>
+    </div>
+  </body>
+</html>
+

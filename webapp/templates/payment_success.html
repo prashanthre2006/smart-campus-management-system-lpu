@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Success</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --ok:#22c55e; --accent:#f9a826; }
+      body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; font-family:"Manrope",sans-serif; background:radial-gradient(900px 500px at 80% -10%, #1d2d4b 0%, transparent 55%), var(--bg); color:var(--text); }
+      .card { width:100%; max-width:700px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:24px; text-align:center; }
+      h1 { margin-top:0; color:var(--ok); font-family:"Playfair Display",serif; font-size:42px; }
+      p { color:var(--muted); }
+      a { color:var(--accent); text-decoration:none; font-weight:700; }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="card">
+      <h1>Payment Successful</h1>
+      <p>Your QR payment has been received and verified.</p>
+      {% if order_id %}<p>Order ID: <strong>#{{ order_id }}</strong></p>{% endif %}
+      <p><a href="/smart-food">Back to Smart Food</a></p>
+    </div>
+  </body>
+</html>
+

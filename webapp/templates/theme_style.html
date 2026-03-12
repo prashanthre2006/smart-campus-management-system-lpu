@@ -1,0 +1,142 @@
+<style>
+  :root {
+    --bg: #f3f6fb;
+    --panel: #ffffff;
+    --panel-soft: #eef3ff;
+    --ink: #162033;
+    --muted: #5f6f89;
+    --line: #d9e3f3;
+    --brand: #1e5eff;
+    --brand-dark: #1647c2;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --danger: #dc2626;
+    --shadow: 0 18px 45px rgba(13, 32, 68, 0.08);
+  }
+
+  body {
+    color: var(--ink) !important;
+    background:
+      radial-gradient(900px 500px at 88% -160px, rgba(64, 120, 255, 0.22) 0, transparent 62%),
+      radial-gradient(700px 420px at -12% -120px, rgba(0, 166, 138, 0.14) 0, transparent 58%),
+      linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #eef3ff 100%) !important;
+  }
+
+  .shell,
+  .container,
+  .wrap,
+  .page,
+  .content,
+  .main {
+    max-width: 1120px !important;
+    margin: 0 auto !important;
+  }
+
+  .hero,
+  .panel,
+  .card,
+  .module,
+  .section,
+  .stat,
+  .box,
+  .tile {
+    background: var(--panel) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  input,
+  select,
+  textarea {
+    background: #fff !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 10px !important;
+  }
+
+  button,
+  .btn,
+  input[type="submit"] {
+    border-radius: 10px !important;
+  }
+
+  button,
+  .btn.primary,
+  input[type="submit"] {
+    background: linear-gradient(115deg, var(--brand), var(--brand-dark)) !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 700 !important;
+  }
+
+  .btn.secondary,
+  button.alt,
+  .links a,
+  nav a {
+    background: #fff !important;
+    color: var(--muted) !important;
+    border: 1px solid var(--line) !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .brand,
+  .title {
+    color: var(--ink) !important;
+  }
+
+  p,
+  .sub,
+  .subtitle,
+  .muted,
+  .label,
+  .note,
+  .tips,
+  small {
+    color: var(--muted) !important;
+  }
+
+  table {
+    background: #fff !important;
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid var(--line) !important;
+    color: var(--ink) !important;
+  }
+
+  th {
+    color: var(--muted) !important;
+    font-size: 12px !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .num,
+  .value {
+    color: var(--ink) !important;
+    font-weight: 700 !important;
+  }
+
+  .ok,
+  .success,
+  .paid {
+    color: var(--ok) !important;
+  }
+
+  .warning,
+  .pending {
+    color: var(--warn) !important;
+  }
+
+  .error,
+  .failed,
+  .danger {
+    color: var(--danger) !important;
+  }
+</style>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LPU Face Attendance</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root {
+        --bg:#0d1321;
+        --panel:#111a2b;
+        --panel-2:#17233b;
+        --line:#24324f;
+        --text:#e7edf9;
+        --muted:#9fb0cf;
+        --accent:#f9a826;
+        --accent-2:#f97316;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: "Manrope", system-ui, sans-serif;
+        background: radial-gradient(1000px 550px at 80% -20%, #24365c 0%, transparent 55%), var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 24px;
+        min-height: 100vh;
+      }
+      .shell { max-width: 1100px; margin: 0 auto; }
+      .hero { display: flex; justify-content: space-between; align-items: end; margin-bottom: 18px; }
+      .hero-left { display: flex; gap: 14px; align-items: center; }
+      .crest { width: 54px; height: 54px; border-radius: 12px; background: #0f1727; display: grid; place-items: center; border: 1px solid var(--line); overflow: hidden; }
+      .crest img { width: 100%; height: 100%; object-fit: cover; }
+      .title { font-family: "Playfair Display", sans-serif; font-size: 34px; margin: 0; }
+      .subtitle { color: var(--muted); margin: 6px 0 0; }
+      .badge { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+      .banner { margin-top: 12px; padding: 14px 16px; border-radius: 12px; background: linear-gradient(120deg, rgba(249,168,38,0.16), rgba(249,115,22,0.16)); border: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+      .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; margin-top: 16px; }
+      .card { background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
+      video, canvas { width: 100%; max-width: 100%; border-radius: 12px; background: #000; border: 1px solid var(--line); }
+      .status-pill { position: absolute; left: 12px; top: 12px; padding: 6px 12px; border-radius: 999px; font-size: 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--line); color: var(--muted); }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        background: rgba(0,0,0,0.35);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        border-radius: 12px;
+      }
+      .overlay.show { opacity: 1; }
+      .kiosk-banner {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        background: rgba(15,23,42,0.85);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+      }
+      .kiosk-start {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(5, 8, 16, 0.8);
+        z-index: 50;
+      }
+      .kiosk-start .box {
+        background: #0f1727;
+        border: 1px solid var(--line);
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        max-width: 320px;
+      }
+      .video-wrap { position: relative; }
+      label { display: block; margin: 10px 0 6px; color: var(--muted); font-size: 12px; }
+      select, button { width: 100%; padding: 10px 12px; font-size: 14px; border-radius: 10px; border: 1px solid var(--line); background: #0f1727; color: var(--text); outline: none; }
+      .btn { cursor: pointer; border: none; background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #1d160d; font-weight: 700; }
+      .btn.secondary { background: #0f1727; color: var(--text); border: 1px solid var(--line); }
+      .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+      .status { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--line); color: var(--muted); min-height: 46px; }
+      .result { margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; color: #9ca3af; white-space: pre-wrap; }
+      .table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+      .table th, .table td { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; }
+      .right { text-align: right; }
+      .kiosk { position: fixed; top: 16px; right: 16px; }
+      .kiosk button { width: auto; }
+      .popup {
+        position: fixed;
+        top: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111827;
+        border: 1px solid var(--line);
+        color: #e5e7eb;
+        padding: 10px 14px;
+        border-radius: 10px;
+        z-index: 70;
+        display: none;
+        max-width: 90vw;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+      }
+      .popup.ok { border-color: #14532d; color: #86efac; }
+      .popup.warn { border-color: #7f1d1d; color: #fca5a5; }
+      @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    button, .btn, .action-btn, .enroll-btn {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+button:hover, .btn:hover, .action-btn:hover, .enroll-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+}</style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="kiosk">
+        <button class="btn secondary" onclick="toggleKiosk()">Full Screen</button>
+      </div>
+      <div id="kioskBanner" class="kiosk-banner" style="display:none;">
+        Attendance marking only works in full screen. Click "Full Screen".
+      </div>
+      <div id="kioskStart" class="kiosk-start">
+        <div class="box">
+          <p>Start attendance in full screen</p>
+          <button class="btn" onclick="startKiosk()">Start Full Screen</button>
+        </div>
+      </div>
+      <div id="popupMsg" class="popup"></div>
+      <div class="hero">
+        <div class="hero-left">
+          <div class="crest" aria-hidden="true">
+            <img src="/static/lpu-logo.jfif" alt="LPU Logo" />
+          </div>
+          <div>
+            <h2 class="title">Lovely Professional University</h2>
+            <p class="subtitle">Student Face Attendance</p>
+          </div>
+        </div>
+        <div class="badge">Student Portal</div>
+      </div>
+      <div class="banner">Please face the camera and keep your face centered.</div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Live Camera</h3>
+          <div class="video-wrap">
+            <span class="status-pill" id="status">Status: Ready</span>
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" width="560" height="420" style="display:none;"></canvas>
+            <div id="overlay" class="overlay"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Mark Attendance</h3>
+          <label>Attendance Type</label>
+          <select id="attendanceType" onchange="onAttendanceTypeChange()">
+            <option value="regular">Regular Class</option>
+            <option value="makeup">Make-Up Class</option>
+          </select>
+          <div id="regularWrap">
+            <label>Class & Timetable ({{ today_day }})</label>
+            <select id="timetableEntry">
+              {% for t in timetable_entries %}
+              <option value="{{ t.id }}">
+                {{ t.period.start_time|time:"H" }}-{{ t.period.end_time|time:"H" }} | {{ t.offering.course.code|default:t.offering.course.name }} | {{ t.offering.subject.name }} | {{ t.room|default:"TBA" }}
+              </option>
+              {% empty %}
+              <option value="">No timetable configured by admin for today</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="makeupWrap" style="display:none;">
+            <label>Make-Up Session</label>
+            <select id="makeupSession">
+              <option value="">Select session</option>
+              {% for s in makeup_sessions %}
+              <option value="{{ s.id }}">{{ s.date }} | {{ s.start_time }}-{{ s.end_time }} | {{ s.remedial_code }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn secondary" style="margin-top:8px;" onclick="refreshMakeupSessions()">Refresh Make-Up Sessions</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" onclick="toggleRecognize()">Start/Stop</button>
+            <button class="btn secondary" onclick="refreshRecent()">Refresh List</button>
+          </div>
+          <div class="status" id="statusBox">Ready to go.</div>
+          <div class="result" id="result"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <h3>Recent Attendance</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Period</th>
+              <th>Timestamp</th>
+              <th class="right">Camera</th>
+            </tr>
+          </thead>
+          <tbody id="recentBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      let recognizing = false;
+      let timerId = null;
+      let unknownStreak = 0;
+      let lastSuccessAt = 0;
+      let cooldownUntil = 0;
+      let lastUnknownPopupAt = 0;
+
+      async function startCamera() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
+        });
+        video.srcObject = stream;
+        await new Promise((resolve) => {
+          if (video.readyState >= 1) {
+            resolve();
+            return;
+          }
+          video.onloadedmetadata = () => resolve();
+        });
+        await video.play();
+      }
+
+      function snapshot() {
+        if (!video.videoWidth || !video.videoHeight) return null;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.8);
+      }
+
+      function setStatus(text) {
+        if (document.getElementById("statusBox").innerText === text) return;
+        document.getElementById("status").innerText = "Status: " + text;
+        document.getElementById("statusBox").innerText = text;
+      }
+
+      function onAttendanceTypeChange() {
+        const type = document.getElementById("attendanceType").value;
+        document.getElementById("regularWrap").style.display = type === "makeup" ? "none" : "block";
+        document.getElementById("makeupWrap").style.display = type === "makeup" ? "block" : "none";
+      }
+
+      function showOverlay(text) {
+        const el = document.getElementById("overlay");
+        el.innerText = text;
+        el.classList.add("show");
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove("show"), 1200);
+      }
+
+      function showPopup(text, level) {
+        const el = document.getElementById("popupMsg");
+        el.innerText = text;
+        el.className = "popup " + (level || "");
+        el.style.display = "block";
+        clearTimeout(el._t);
+        el._t = setTimeout(() => { el.style.display = "none"; }, 2200);
+      }
+
+      async function recognizeOnce() {
+        const isKiosk = new URLSearchParams(window.location.search).get("kiosk") === "1";
+        if (isKiosk && !document.fullscreenElement) {
+          document.getElementById("kioskBanner").style.display = "block";
+          return;
+        }
+        if (Date.now() < cooldownUntil) {
+          return;
+        }
+        const frame = snapshot();
+        if (!frame) {
+          setStatus("Camera not ready. Please wait and try again.");
+          return;
+        }
+        const form = new FormData();
+        const attendanceType = document.getElementById("attendanceType").value;
+        form.append("frame", frame);
+        form.append("attendance_type", attendanceType);
+        if (attendanceType === "regular") {
+          const timetableEntryId = document.getElementById("timetableEntry").value;
+          if (!timetableEntryId) {
+            setStatus("No timetable configured by admin for today. Switch to Make-Up Class.");
+            return;
+          }
+          form.append("timetable_entry_id", timetableEntryId);
+        } else {
+          const makeupSessionId = document.getElementById("makeupSession").value;
+          if (!makeupSessionId) {
+            setStatus("Select a make-up session first.");
+            return;
+          }
+          form.append("makeup_session_id", makeupSessionId);
+        }
+        const res = await fetch("/api/recognize", { method: "POST", body: form });
+        const data = await res.json();
+        if (!data.ok) {
+          document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+          setStatus(data.error || "Operation failed");
+          return;
+        }
+        if (data.ok && data.name !== "Unknown" && data.marked === true) {
+          unknownStreak = 0;
+          lastSuccessAt = Date.now();
+          document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+          const typeLabel = data.attendance_type === "makeup" ? "Make-up attendance" : "Attendance";
+          const msg = data.already_marked
+            ? typeLabel + " already marked: " + data.name
+            : typeLabel + " marked: " + data.name;
+          setStatus(msg + " | Next scan in 5 seconds");
+          showOverlay(msg);
+          showPopup(msg, data.already_marked ? "warn" : "ok");
+          cooldownUntil = Date.now() + 5000;
+          refreshRecent();
+          setTimeout(refreshRecent, 250);
+        } else if (data.ok && data.name !== "Unknown") {
+          unknownStreak = 0;
+          setStatus(data.message || ("Face detected: " + data.name));
+        } else {
+          unknownStreak += 1;
+          if (Date.now() - lastSuccessAt > 3000 && unknownStreak >= 3) {
+            setStatus("Unknown person, please register your face.");
+            if (Date.now() - lastUnknownPopupAt > 5000) {
+              showPopup("Unknown person, please register your face.", "warn");
+              lastUnknownPopupAt = Date.now();
+            }
+          }
+        }
+      }
+
+      function toggleRecognize() {
+        recognizing = !recognizing;
+        setStatus(recognizing ? "Running" : "Stopped");
+        if (recognizing) {
+          timerId = setInterval(recognizeOnce, 1000);
+        } else if (timerId) {
+          clearInterval(timerId);
+        }
+      }
+
+      async function refreshRecent() {
+        const today = new Date().toISOString().slice(0, 10);
+        const res = await fetch("/api/recent?type=all&date=" + today + "&ts=" + Date.now(), { cache: "no-store" });
+        const data = await res.json();
+        if (!data.ok) return;
+        const rows = data.records || [];
+        const body = rows
+          .slice(0, 10)
+          .map(
+            (r) =>
+              `<tr><td>${r.name}</td><td>${r.period}</td><td>${r.timestamp}</td><td class="right">${r.camera}</td></tr>`
+          )
+          .join("");
+        document.getElementById("recentBody").innerHTML = body || "<tr><td colspan='4'>No records</td></tr>";
+      }
+
+      async function refreshMakeupSessions() {
+        const res = await fetch("/api/makeup/sessions");
+        const data = await res.json();
+        if (!data.ok) return;
+        const select = document.getElementById("makeupSession");
+        const current = select.value;
+        select.innerHTML = "<option value=''>Select session</option>";
+        (data.sessions || []).forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = `${s.date} | ${s.start_time}-${s.end_time} | ${s.remedial_code}`;
+          select.appendChild(opt);
+        });
+        if (current) select.value = current;
+      }
+
+      startCamera().then(() => {
+        recognizing = true;
+        setStatus("Running");
+        timerId = setInterval(recognizeOnce, 1000);
+        autoKiosk();
+      }).catch(() => {
+        document.getElementById("kioskStart").style.display = "flex";
+      });
+      refreshRecent();
+      refreshMakeupSessions();
+
+      async function startKiosk() {
+        try {
+          await startCamera();
+          recognizing = true;
+          setStatus("Running");
+          timerId = setInterval(recognizeOnce, 1000);
+          document.getElementById("kioskStart").style.display = "none";
+          document.documentElement.requestFullscreen().catch(() => {
+            document.getElementById("kioskBanner").style.display = "block";
+          });
+        } catch (e) {
+          setStatus("Camera permission needed");
+        }
+      }
+
+      let allowExitFullscreen = false;
+
+      function toggleKiosk() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      }
+
+      function autoKiosk() {
+        const isKiosk = new URLSearchParams(window.location.search).get("kiosk");
+        if (isKiosk === "1") {
+          document.documentElement.requestFullscreen().catch(() => {
+            document.getElementById("kioskBanner").style.display = "block";
+          });
+          document.getElementById("kioskStart").style.display = "flex";
+          const onClick = () => {
+            document.documentElement.requestFullscreen().catch(() => {});
+            document.getElementById("kioskBanner").style.display = "none";
+            document.removeEventListener("click", onClick);
+          };
+          document.addEventListener("click", onClick);
+        }
+      }
+
+      document.addEventListener("fullscreenchange", () => {
+        const isKiosk = new URLSearchParams(window.location.search).get("kiosk") === "1";
+        if (isKiosk && !allowExitFullscreen && !document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+        if (document.fullscreenElement) {
+          document.getElementById("kioskBanner").style.display = "none";
+        }
+      });
+
+      // Strict lock: keep trying to re-enter fullscreen in kiosk mode
+      setInterval(() => {
+        const isKiosk = new URLSearchParams(window.location.search).get("kiosk") === "1";
+        if (isKiosk && !allowExitFullscreen && !document.fullscreenElement) {
+          document.getElementById("kioskBanner").style.display = "block";
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      }, 1000);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          const isKiosk = new URLSearchParams(window.location.search).get("kiosk") === "1";
+          if (isKiosk && !allowExitFullscreen) {
+            setTimeout(() => {
+              document.documentElement.requestFullscreen().catch(() => {});
+            }, 50);
+          }
+        }
+      }, true);
+
+      // Prevent back navigation in kiosk mode
+      if (new URLSearchParams(window.location.search).get("kiosk") === "1") {
+        history.pushState(null, "", location.href);
+        window.addEventListener("popstate", () => {
+          history.pushState(null, "", location.href);
+        });
+      }
+
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

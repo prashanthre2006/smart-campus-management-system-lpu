@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Operations Center</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1120px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+      h1 { margin:0; font-family:"Playfair Display",serif; font-size:34px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:12px; }
+      @media (max-width:900px){ .grid { grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Operations Center</h1>
+        <div class="links"><a href="/dashboard">Dashboard</a><a href="/payments">Payments</a><a href="/smart-food/kitchen">Kitchen</a></div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+          <div>
+            <label style="display:block; margin-bottom:6px; color:#64748b; font-size:12px;">Log Date</label>
+            <input type="date" name="date" value="{{ selected_day }}" />
+          </div>
+          <button type="submit">Apply</button>
+        </form>
+      </div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <h3 style="margin-top:0;">Live Risk Snapshot</h3>
+        <div>Pending payment reviews: <strong>{{ pending_payment_reviews }}</strong></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3 style="margin-top:0;">Low-Confidence Attendance Marks</h3>
+          <table>
+            <thead><tr><th>When</th><th>Detail</th></tr></thead>
+            <tbody>
+              {% for l in low_conf_logs %}
+              <tr><td>{{ l.created_at }}</td><td>{{ l.detail }}</td></tr>
+              {% empty %}
+              <tr><td colspan="2">No low-confidence logs.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Payment Disputes</h3>
+          <table>
+            <thead><tr><th>When</th><th>Detail</th></tr></thead>
+            <tbody>
+              {% for l in dispute_logs %}
+              <tr><td>{{ l.created_at }}</td><td>{{ l.detail }}</td></tr>
+              {% empty %}
+              <tr><td colspan="2">No disputes logged.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px;">
+        <div class="card">
+          <h3 style="margin-top:0;">Unknown Face Alerts</h3>
+          <table>
+            <thead><tr><th>When</th><th>Detail</th></tr></thead>
+            <tbody>
+              {% for l in unknown_face_logs %}
+              <tr><td>{{ l.created_at }}</td><td>{{ l.detail }}</td></tr>
+              {% empty %}
+              <tr><td colspan="2">No unknown-face logs.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Refund Actions</h3>
+          <table>
+            <thead><tr><th>When</th><th>Detail</th></tr></thead>
+            <tbody>
+              {% for l in refund_logs %}
+              <tr><td>{{ l.created_at }}</td><td>{{ l.detail }}</td></tr>
+              {% empty %}
+              <tr><td colspan="2">No refunds logged.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0;">Recent Audit Trail</h3>
+        <table>
+          <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead>
+          <tbody>
+            {% for a in recent_audit %}
+            <tr><td>{{ a.created_at }}</td><td>{{ a.actor }}</td><td>{{ a.action }}</td><td>{{ a.detail }}</td></tr>
+            {% empty %}
+            <tr><td colspan="4">No logs available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

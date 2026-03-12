@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Operations</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --panel2:#17233b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:"Manrope",sans-serif; background:radial-gradient(900px 500px at 85% -10%, #1e2c4a 0%, transparent 55%), var(--bg); color:var(--text); padding:24px; }
+      .shell { max-width:1100px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+      .brand { font-family:"Playfair Display",serif; font-size:30px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
+      .stat { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; }
+      .label { color:var(--muted); font-size:13px; }
+      .num { margin-top:6px; font-size:24px; font-weight:700; color:var(--accent); }
+      .panel { background:linear-gradient(140deg, var(--panel) 0%, var(--panel2) 85%); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid var(--line); padding:9px 6px; text-align:left; }
+      th { color:var(--muted); font-size:13px; }
+      .ok, .fail, .info { padding:7px 10px; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+      .ok { background:#14532d; color:#dcfce7; }
+      .fail { background:#7f1d1d; color:#fee2e2; }
+      .info { background:#1e3a8a; color:#dbeafe; }
+      .msg { color:#93c5fd; margin-top:10px; }
+      input { width:100%; padding:7px 8px; border-radius:8px; border:1px solid var(--line); background:#0f1727; color:var(--text); margin-top:6px; }
+      @media (max-width:1100px){ .grid{ grid-template-columns:1fr 1fr; } }
+      @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <div class="brand">Payment Operations</div>
+        <div class="links">
+          <a href="/smart-food">Smart Food</a>
+          <a href="/smart-food/kitchen">Kitchen Board</a>
+          <a href="/ops-center">Ops Center</a>
+          <a href="/">Smart Campus</a>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="stat"><div class="label">Total Payment Records</div><div class="num">{{ payment_count }}</div></div>
+        <div class="stat"><div class="label">Total Paid Amount</div><div class="num">{{ paid_total }}</div></div>
+        <div class="stat"><div class="label">Pending</div><div class="num">{{ pending_count }}</div></div>
+        <div class="stat"><div class="label">Failed</div><div class="num">{{ failed_count }}</div></div>
+        <div class="stat"><div class="label">Pending > 30 mins</div><div class="num">{{ aged_pending_count }}</div></div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0;">Payment Queue</h3>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Order</th><th>Student</th><th>Method</th><th>Status</th><th>Amount</th><th>Txn ID</th>{% if is_admin %}<th>Review</th><th>Dispute Note</th><th>Refund</th>{% endif %}<th>Proof</th></tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+            <tr>
+              <td>{{ p.id }}</td>
+              <td>#{{ p.order.id }}</td>
+              <td>{{ p.order.student.name|default:"-" }}</td>
+              <td>{{ p.method }}</td>
+              <td>{{ p.status }}</td>
+              <td>{{ p.amount }}</td>
+              <td>{{ p.transaction_id|default:"-" }}</td>
+              {% if is_admin %}
+              <td>
+                {% if p.status == "pending" %}
+                <button class="ok" onclick="reviewPayment('{{ p.id }}','received')">Received</button>
+                <button class="fail" onclick="reviewPayment('{{ p.id }}','not_received')">Not Received</button>
+                {% else %}-{% endif %}
+              </td>
+              <td>
+                <input id="note-{{ p.id }}" placeholder="Add dispute/remark" />
+                <button class="info" style="margin-top:6px;" onclick="flagDispute('{{ p.id }}')">Flag</button>
+              </td>
+              <td>
+                {% if p.status == "paid" %}
+                <button class="fail" onclick="refundPayment('{{ p.id }}')">Refund</button>
+                {% else %}-{% endif %}
+              </td>
+              {% endif %}
+              <td>
+                <input id="proof-{{ p.id }}" type="file" accept=".png,.jpg,.jpeg,.pdf" />
+                <button class="info" style="margin-top:6px;" onclick="uploadProof('{{ p.id }}')">Upload</button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="{% if is_admin %}11{% else %}8{% endif %}">No payments available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p id="reviewMsg" class="msg"></p>
+      </div>
+    </div>
+
+    <script>
+      async function reviewPayment(paymentId, decision) {
+        const form = new FormData();
+        form.append("payment_id", paymentId);
+        form.append("decision", decision);
+        const res = await fetch("/api/payment/admin-review", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("reviewMsg");
+        if (data.ok) {
+          msg.innerText = "Payment #" + paymentId + " updated to " + data.payment_status + ".";
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msg.innerText = data.error || "Update failed.";
+        }
+      }
+
+      async function flagDispute(paymentId) {
+        const note = document.getElementById("note-" + paymentId).value || "";
+        if (!note.trim()) return;
+        const form = new FormData();
+        form.append("payment_id", paymentId);
+        form.append("note", note);
+        const res = await fetch("/api/payment/dispute", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("reviewMsg");
+        if (data.ok) {
+          msg.innerText = "Dispute noted for payment #" + paymentId + ".";
+          document.getElementById("note-" + paymentId).value = "";
+        } else {
+          msg.innerText = data.error || "Dispute failed.";
+        }
+      }
+
+      async function refundPayment(paymentId) {
+        const note = prompt("Refund note (optional):") || "";
+        const form = new FormData();
+        form.append("payment_id", paymentId);
+        form.append("note", note);
+        const res = await fetch("/api/payment/refund", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("reviewMsg");
+        if (data.ok) {
+          msg.innerText = "Payment #" + paymentId + " refunded.";
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msg.innerText = data.error || "Refund failed.";
+        }
+      }
+
+      async function uploadProof(paymentId) {
+        const el = document.getElementById("proof-" + paymentId);
+        if (!el.files || !el.files.length) {
+          return;
+        }
+        const form = new FormData();
+        form.append("payment_id", paymentId);
+        form.append("proof", el.files[0]);
+        const res = await fetch("/api/payment/upload-proof", { method: "POST", body: form });
+        const data = await res.json();
+        const msg = document.getElementById("reviewMsg");
+        if (data.ok) {
+          msg.innerText = "Proof uploaded for payment #" + paymentId + ".";
+          el.value = "";
+        } else {
+          msg.innerText = data.error || "Proof upload failed.";
+        }
+      }
+    </script>
+  </body>
+</html>
+

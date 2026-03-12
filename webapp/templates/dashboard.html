@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance Dashboard</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --panel2:#17233b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      * { box-sizing:border-box; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:radial-gradient(1000px 550px at 80% -20%, #24365c 0%, transparent 55%), var(--bg); color:var(--text); }
+      .shell { max-width:1120px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+      .title { margin:0; font-family:"Playfair Display",serif; font-size:34px; }
+      .muted { color:var(--muted); }
+      .links { display:flex; gap:8px; flex-wrap:wrap; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
+      .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+      .stat { background:linear-gradient(140deg, var(--panel) 0%, var(--panel2) 85%); border:1px solid var(--line); border-radius:14px; padding:14px; }
+      .stat .label { color:var(--muted); font-size:13px; }
+      .stat .num { margin-top:6px; font-size:28px; font-weight:700; color:var(--accent); }
+      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+      .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      .panel h3 { margin-top:0; }
+      ul { margin:8px 0 0; }
+      li { margin:6px 0; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:12px; }
+      .bar-row { margin:8px 0; }
+      .bar-head { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:4px; }
+      .bar { height:8px; background:#0f1727; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+      .bar > span { display:block; height:100%; background:linear-gradient(120deg,#f9a826,#f97316); }
+      @media (max-width:980px){ .grid4{ grid-template-columns:1fr 1fr; } .grid2{ grid-template-columns:1fr; } }
+      @media (max-width:640px){ .grid4{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <div>
+          <h1 class="title">Attendance Dashboard</h1>
+          <div class="muted">Role-based admin analytics and monitoring.</div>
+        </div>
+        <div class="links">
+          <a href="/admin/devices">Devices</a>
+          <a href="/admin/defaulters">Defaulters</a>
+          <a href="/admin/monthly">Monthly</a>
+          <a href="/admin/schedule">Timetable</a>
+          <a href="/admin">Admin Panel</a>
+          <a href="/logout">Logout</a>
+        </div>
+      </div>
+
+      <div class="grid4">
+        <div class="stat"><div class="label">Total Students</div><div id="totalStudents" class="num">-</div></div>
+        <div class="stat"><div class="label">Marked Today</div><div id="markedToday" class="num">-</div></div>
+        <div class="stat"><div class="label">Defaulters Today</div><div id="defaultersCount" class="num">-</div></div>
+        <div class="stat"><div class="label">Attendance Rate Today</div><div id="attendanceRate" class="num">-</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <h3>Today Defaulters</h3>
+          <ul id="defaultersList"></ul>
+        </div>
+        <div class="panel">
+          <h3>Today Period-Wise Attendance</h3>
+          <table>
+            <thead><tr><th>Period</th><th>Marked</th></tr></thead>
+            <tbody id="periodRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <h3>7-Day Attendance Trend</h3>
+          <div id="trendBars"></div>
+        </div>
+        <div class="panel">
+          <h3>Low Attendance (This Month)</h3>
+          <table>
+            <thead><tr><th>Student</th><th>Marked Count</th></tr></thead>
+            <tbody id="lowRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function esc(s) {
+        return String(s || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+      }
+
+      async function loadDashboard() {
+        const res = await fetch("/api/dashboard");
+        const data = await res.json();
+        if (!data.ok) return;
+        const d = data.data || {};
+
+        document.getElementById("totalStudents").innerText = d.total_students ?? 0;
+        document.getElementById("markedToday").innerText = d.today_marked ?? 0;
+        document.getElementById("defaultersCount").innerText = (d.today_defaulters || []).length;
+        document.getElementById("attendanceRate").innerText = String(d.attendance_rate ?? 0) + "%";
+
+        const defaulters = d.today_defaulters || [];
+        document.getElementById("defaultersList").innerHTML = defaulters.length
+          ? defaulters.map((n) => `<li>${esc(n)}</li>`).join("")
+          : "<li>No defaulters today.</li>";
+
+        const periods = d.period_wise_today || [];
+        document.getElementById("periodRows").innerHTML = periods.length
+          ? periods.map((p) => `<tr><td>${esc(p.period_name || "-")}</td><td>${p.count || 0}</td></tr>`).join("")
+          : "<tr><td colspan='2'>No attendance records for today.</td></tr>";
+
+        const trend = d.weekly_trend || [];
+        document.getElementById("trendBars").innerHTML = trend.length
+          ? trend.map((r) => {
+              const rate = Number(r.rate || 0);
+              const width = Math.max(0, Math.min(100, rate));
+              return `<div class='bar-row'><div class='bar-head'><span>${esc(r.date)}</span><span>${rate}% (${r.marked || 0})</span></div><div class='bar'><span style='width:${width}%;'></span></div></div>`;
+            }).join("")
+          : "<div class='muted'>No trend data.</div>";
+
+        const low = d.monthly_low_attendance || [];
+        document.getElementById("lowRows").innerHTML = low.length
+          ? low.map((r) => `<tr><td>${esc(r.student__name || "-")}</td><td>${r.count || 0}</td></tr>`).join("")
+          : "<tr><td colspan='2'>No monthly data.</td></tr>";
+      }
+
+      loadDashboard();
+    </script>
+  </body>
+</html>
+

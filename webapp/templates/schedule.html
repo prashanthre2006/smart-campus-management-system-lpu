@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timetable Manager</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#0d1321; --panel:#111a2b; --line:#24324f; --text:#e7edf9; --muted:#9fb0cf; --accent:#f9a826; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1140px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+      h1 { font-family:"Playfair Display",serif; margin:0; font-size:34px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+      .muted { color:var(--muted); }
+      .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+      label { display:block; margin:8px 0 6px; color:var(--muted); font-size:12px; }
+      input, select, button { width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0f1727; color:var(--text); }
+      button { border:none; background:linear-gradient(120deg,#f9a826,#f97316); color:#1d160d; font-weight:700; cursor:pointer; }
+      .ok { color:#86efac; }
+      .err { color:#fca5a5; }
+      table { width:100%; border-collapse:collapse; margin-top:8px; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:13px; }
+      @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Timetable Manager</h1>
+        <div class="links"><a href="/admin">Admin Panel</a><a href="/dashboard">Dashboard</a></div>
+      </div>
+
+      <div class="card">
+        <p class="muted">Add day-wise timetable entries. Slot duration is 1 hour.</p>
+        <form method="post">
+          {% csrf_token %}
+          <div class="grid">
+            <div><label>Faculty Name</label><input id="facultyName" name="faculty_name" required /></div>
+            <div><label>Course Name</label><input name="course_name" required /></div>
+            <div><label>Course Code</label><input name="course_code" required /></div>
+            <div>
+              <label>Select Block</label>
+              <select id="blockId" name="block_id" required>
+                <option value="">Select block</option>
+                {% for b in blocks %}<option value="{{ b.id }}">{{ b.code }} - {{ b.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div><label>Classroom No</label><input id="classroomNo" name="classroom_no" required /></div>
+            <div>
+              <label>Slot (1 Hour)</label>
+              <select name="period_id" required>
+                <option value="">Select slot</option>
+                {% for p in slot_options %}<option value="{{ p.id }}">{{ p.label }}</option>{% endfor %}
+              </select>
+            </div>
+            <div>
+              <label>Day</label>
+              <select id="daySelect" name="day" required>
+                {% for d in days %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="submit" style="max-width:220px;">Save Timetable</button>
+            <button type="button" style="max-width:260px;" onclick="showSuggestions()">Suggest Available Slots</button>
+          </div>
+          <p id="suggestionMsg" class="muted"></p>
+        </form>
+        {% if status_msg %}<p class="ok">{{ status_msg }}</p>{% endif %}
+        {% if error_msg %}<p class="err">{{ error_msg }}</p>{% endif %}
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Timetable Records</h3>
+        {% for grp in grouped_entries %}
+        <h4>{{ grp.day }}</h4>
+        <table>
+          <thead><tr><th>Faculty</th><th>Course Name</th><th>Course Code</th><th>Room</th><th>Time Slot</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for e in grp.entries %}
+            <tr>
+              <td>{{ e.offering.faculty.name|default:"-" }}</td>
+              <td>{{ e.offering.course.name }}</td>
+              <td>{{ e.offering.course.code|default:"-" }}</td>
+              <td>{{ e.room|default:"-" }}</td>
+              <td>{{ e.period.start_time|time:"H" }}-{{ e.period.end_time|time:"H" }}</td>
+              <td>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_timetable" />
+                  <input type="hidden" name="id" value="{{ e.id }}" />
+                  <button type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No entries for {{ grp.day }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endfor %}
+      </div>
+    </div>
+    <script>
+      async function showSuggestions() {
+        const day = document.getElementById("daySelect").value;
+        const faculty = document.getElementById("facultyName").value || "";
+        const blockEl = document.getElementById("blockId");
+        const blockText = blockEl.options[blockEl.selectedIndex] ? blockEl.options[blockEl.selectedIndex].text : "";
+        const classroom = document.getElementById("classroomNo").value || "";
+        const room = blockText && classroom ? (blockText.split(" - ")[0] + "-" + classroom) : "";
+        const params = new URLSearchParams({ day: day, faculty_name: faculty, room: room });
+        const res = await fetch("/api/schedule/suggestions?" + params.toString());
+        const data = await res.json();
+        const msg = document.getElementById("suggestionMsg");
+        if (data.ok) {
+          msg.innerText = data.suggested_slots.length
+            ? ("Suggested free slots: " + data.suggested_slots.join(", "))
+            : "No free slot suggestions found.";
+        } else {
+          msg.innerText = data.error || "Suggestion failed.";
+        }
+      }
+    </script>
+  </body>
+</html>
+

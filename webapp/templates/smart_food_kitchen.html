@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kitchen Board</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#11100d; --panel:#1a1814; --line:#3d382a; --text:#f6f0df; --muted:#c3b99b; --brand:#f2a93b; }
+      body { margin:0; padding:24px; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); }
+      .shell { max-width:1160px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+      h1 { margin:0; font-family:"Playfair Display",serif; font-size:34px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:12px; }
+      .stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; }
+      .stat .num { color:var(--brand); font-size:24px; font-weight:700; }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+      th { color:var(--muted); font-size:12px; }
+      select { padding:7px 8px; border-radius:8px; border:1px solid var(--line); background:#15130f; color:var(--text); }
+      button { padding:7px 10px; border:none; border-radius:8px; background:var(--brand); color:#241c0e; font-weight:700; cursor:pointer; }
+      @media (max-width:1000px){ .grid{ grid-template-columns:1fr 1fr; } }
+      @media (max-width:600px){ .grid{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <h1>Kitchen Operations Board</h1>
+        <div class="links"><a href="/smart-food/orders">Orders</a><a href="/smart-food">Smart Food Home</a></div>
+      </div>
+
+      <div class="grid">
+        {% for s in status_counts %}
+        <div class="stat"><div>{{ s.status|title }}</div><div class="num">{{ s.count }}</div></div>
+        {% empty %}
+        <div class="stat"><div>No status data</div><div class="num">0</div></div>
+        {% endfor %}
+      </div>
+
+      <div class="card">
+        <table>
+          <thead><tr><th>Order</th><th>Student</th><th>Mode</th><th>Slot</th><th>Status</th><th>Total</th><th>Update</th></tr></thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td>#{{ order.id }}</td>
+              <td>{{ order.student.name|default:"-" }}</td>
+              <td>{{ order.order_mode }}</td>
+              <td>{{ order.slot.name|default:"-" }}</td>
+              <td id="st-{{ order.id }}">{{ order.status }}</td>
+              <td>{{ order.total_amount }}</td>
+              <td>
+                <select id="sel-{{ order.id }}">
+                  {% for st in status_choices %}
+                  <option value="{{ st }}" {% if order.status == st %}selected{% endif %}>{{ st }}</option>
+                  {% endfor %}
+                </select>
+                <button onclick="updateStatus('{{ order.id }}')">Save</button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No orders.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      async function updateStatus(orderId) {
+        const form = new FormData();
+        form.append("order_id", orderId);
+        form.append("status", document.getElementById("sel-" + orderId).value);
+        const res = await fetch("/api/food/update-status", { method: "POST", body: form });
+        const data = await res.json();
+        if (!data.ok) {
+          alert(data.error || "Failed");
+          return;
+        }
+        document.getElementById("st-" + orderId).innerText = data.status;
+      }
+    </script>
+  </body>
+</html>
+

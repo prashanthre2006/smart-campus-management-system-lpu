@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campus Bistro Orders</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;600;700&display=swap");
+      :root { --bg:#11100d; --panel:#1a1814; --line:#3d382a; --text:#f6f0df; --muted:#c3b99b; --brand:#f2a93b; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:"Manrope",sans-serif; background:var(--bg); color:var(--text); padding:24px; }
+      .shell { max-width:1140px; margin:0 auto; }
+      .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+      .brand { font-family:"Playfair Display",serif; font-size:30px; }
+      .links a { color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; margin-right:8px; }
+      .layout { display:grid; grid-template-columns:1.2fr .8fr; gap:14px; }
+      .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid var(--line); padding:9px 6px; text-align:left; }
+      th { color:var(--muted); font-size:13px; }
+      .badge { padding:4px 10px; border-radius:999px; border:1px solid var(--line); font-size:12px; }
+      .b-pending { color:#fbbf24; }
+      .b-confirmed { color:#86efac; }
+      .b-cancelled, .b-failed { color:#fca5a5; }
+      .small { color:var(--muted); font-size:13px; }
+      a { color:var(--brand); text-decoration:none; }
+      @media (max-width:980px){ .layout{ grid-template-columns:1fr; } }
+    </style>
+    {% include 'theme_style.html' %}
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <div class="brand">Campus Bistro</div>
+        <div class="links">
+          <a href="/smart-food">Home</a>
+          <a href="/smart-food/menu">Menu</a>
+          <a href="/smart-food/checkout">Checkout</a><a href="/smart-food/kitchen">Kitchen</a>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div class="panel">
+          <h2 style="margin-top:0; font-family:'Playfair Display',serif;">Live Orders</h2>
+          <div class="small">Track order flow and current queue status.</div>
+          <table style="margin-top:10px;">
+            <thead><tr><th>Order</th><th>Student</th><th>Mode</th><th>Slot</th><th>Status</th><th>Total</th></tr></thead>
+            <tbody>
+              {% for order in orders %}
+              <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.student.name|default:"-" }}</td>
+                <td>{{ order.order_mode }}</td>
+                <td>{{ order.slot.name|default:"-" }}</td>
+                <td><span class="badge b-{{ order.status|lower }}">{{ order.status }}</span></td>
+                <td>{{ order.total_amount }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6">No orders yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin-top:0;">Peak Slot Analytics</h3>
+          <table>
+            <thead><tr><th>Slot</th><th>Orders</th></tr></thead>
+            <tbody>
+              {% for ps in peak_slots %}
+              <tr><td>{{ ps.slot__name|default:"-" }}</td><td>{{ ps.order_count }}</td></tr>
+              {% empty %}
+              <tr><td colspan="2">No order data available.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <p style="margin-top:12px;"><a href="/payments">Open Full Payments</a></p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
